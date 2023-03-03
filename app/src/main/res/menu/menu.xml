@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<!--    <item android:id="@+id/maps" android:icon="@drawable/"/>-->
+    <item android:id="@+id/maps" android:title="maps"/>
+    <item android:id="@+id/camera" android:title="camera"/>
+    <item android:id="@+id/galeria" android:title="galeria"/>
+    <item android:id="@+id/configuracion" android:title="configuracion"/>
+</menu>

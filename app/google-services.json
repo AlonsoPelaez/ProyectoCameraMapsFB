@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "343103644205",
+    "project_id": "proyectocameramapsfb",
+    "storage_bucket": "proyectocameramapsfb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:343103644205:android:f004cad8e961ecd9044ea4",
+        "android_client_info": {
+          "package_name": "com.dam2.m08.proyectocameramapsfb"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "343103644205-cmqram4e8ufd2192abjucm43d998qfph.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWnBDKH6kcqZU5XcxTJ_hESdmUbd_yhhI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "343103644205-cmqram4e8ufd2192abjucm43d998qfph.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
