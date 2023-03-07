@@ -1,9 +1,11 @@
 package com.dam2.m08.proyectocameramapsfb;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -21,29 +23,19 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
-import android.media.ThumbnailUtils;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.provider.MediaStore;
-import android.util.Log;
+
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
-import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -55,13 +47,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
 public class Camera extends AppCompatActivity {
 
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private ArrayList fotos = new ArrayList();
     private  static final String TAG = "AndroidCameraApi";
     private ImageView btnTomaFoto;
     private ImageView btn_cambiaCamara;
@@ -90,8 +79,9 @@ public class Camera extends AppCompatActivity {
     private HandlerThread  mbackgroundThread;
     private Bitmap resizedBitmap;
 
+
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.camera);
 
@@ -101,7 +91,7 @@ public class Camera extends AppCompatActivity {
         }
         btnTomaFoto = findViewById(R.id.btn_takePicture);
         btn_cambiaCamara = findViewById(R.id.btn_switchCamera);
-//        imageViewGaleria = findViewById(R.id.imageView);
+        imageViewGaleria = findViewById(R.id.ivfoto);
 
         defineCamaras();
 
@@ -122,8 +112,8 @@ public class Camera extends AppCompatActivity {
                 }
             });
         }
-
     }
+
     private void defineCamaras() {
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
@@ -266,16 +256,8 @@ public class Camera extends AppCompatActivity {
                             int height = 60;
                             resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
 
-
                             updateImageView(rotaImage(resizedBitmap));
 
-                            // añade a firebase la foto original hecha
-                            if (retornaUsuarioActual()!=null){
-                                fotos.add(new Foto(bitmapOriginal,resizedBitmap));
-                                db.collection("imagenes").document(retornaUsuarioActual()).set(fotos);
-                                Log.d(TAG, "onImageAvailable: "+ fotos.toString());
-                            }
-                            Log.d(TAG, "onImageAvailable:"+ retornaUsuarioActual() );
 
 
                         }catch (FileNotFoundException e){
@@ -342,16 +324,6 @@ public class Camera extends AppCompatActivity {
             }
         }
     }
-
-    private String retornaUsuarioActual() {
-        SharedPreferences prefer= getSharedPreferences(getString(R.string.prefer_file), Context.MODE_PRIVATE);
-        String usuario = prefer.getString("usuario",null);
-        if (usuario!=null){
-            return usuario;
-        }
-        return null;
-    }
-
     public Bitmap rotaImage(Bitmap bitmap){
 
         Matrix matrix = new Matrix();
@@ -390,11 +362,11 @@ public class Camera extends AppCompatActivity {
     }
     private boolean isStoragePermissionGranted(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED){
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED){
                 return true;
             }
             else{
-                ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
                 return false;
             }
         }else {
@@ -443,8 +415,8 @@ public class Camera extends AppCompatActivity {
             StreamConfigurationMap map= characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert  map!=null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
-            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)!= PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(Camera.this,new String[]{android.Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)!= PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(Camera.this,new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
                 return;
             }
             manager.openCamera(cameraId,stateCallback,null);
@@ -517,4 +489,5 @@ public class Camera extends AppCompatActivity {
         stopBackgroundThread();
         super.onPause();
     }
+
 }

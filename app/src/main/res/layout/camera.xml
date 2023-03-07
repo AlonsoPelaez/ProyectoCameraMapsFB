@@ -39,4 +39,14 @@
         app:layout_constraintVertical_bias="0.0"
         app:srcCompat="@drawable/ic_baseline_cameraswitch_24" />
 
+    <ImageView
+        android:id="@+id/ivfoto"
+        android:layout_width="90dp"
+        android:layout_height="60dp"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_takePicture"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btn_takePicture"
+        app:layout_constraintTop_toTopOf="@+id/btn_takePicture"
+        tools:srcCompat="@tools:sample/avatars" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

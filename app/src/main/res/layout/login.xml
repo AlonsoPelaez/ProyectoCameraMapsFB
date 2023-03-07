@@ -52,8 +52,8 @@
 
     <Button
         android:id="@+id/btnLogin"
-        android:layout_width="206dp"
-        android:layout_height="63dp"
+        android:layout_width="245dp"
+        android:layout_height="53dp"
         android:layout_marginTop="8dp"
         android:backgroundTint="#8AA0EC"
         android:text="Inicia Sesion"
@@ -67,8 +67,8 @@
 
     <Button
         android:id="@+id/sendToRegister"
-        android:layout_width="206dp"
-        android:layout_height="63dp"
+        android:layout_width="247dp"
+        android:layout_height="59dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
         android:backgroundTint="#3F51B5"
