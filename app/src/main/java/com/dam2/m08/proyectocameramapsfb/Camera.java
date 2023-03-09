@@ -1,6 +1,7 @@
 package com.dam2.m08.proyectocameramapsfb;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -85,6 +86,8 @@ public class Camera extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.camera);
 
+        ActionBar actionBar= getSupportActionBar();
+        actionBar.setTitle("");
         textureView = findViewById(R.id.textureView);
         if (textureView != null) {
             textureView.setSurfaceTextureListener(texturelistener);
