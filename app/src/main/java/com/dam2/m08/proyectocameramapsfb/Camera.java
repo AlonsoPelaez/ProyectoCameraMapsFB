@@ -54,6 +54,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.dialog.MaterialDialogs;
+import com.google.common.collect.Maps;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
@@ -118,8 +119,6 @@ public class Camera extends AppCompatActivity {
         setContentView(R.layout.camera);
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle("");
 
         textureView = findViewById(R.id.textureView);
         if (textureView != null) {
@@ -269,29 +268,6 @@ public class Camera extends AppCompatActivity {
                         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
                         String filename = "IMG_" + timeStamp;
 
-                        StorageReference storageReference = storageReferenceGlobal.child(email).child("misImagenes").child(filename);
-                        UploadTask uploadTask = storageReference.putBytes(bytes);
-
-                        uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                            @Override
-                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-
-                                storageReference.getDownloadUrl().addOnSuccessListener(uri -> {
-                                    HashMap<String, Object> map = new HashMap();
-                                    map.put("uri_foto", uri);
-                                    db.collection("Usuarios").document(email).
-                                            collection("misImagenes").document(filename).set(map);
-
-                                    Log.d(TAG, "onSuccess: "+ map);
-                                });
-
-                            }
-
-
-                        }).addOnFailureListener(e -> {
-
-                        });
-
                             if (ContextCompat.checkSelfPermission(this,
                                     Manifest.permission.ACCESS_FINE_LOCATION)
                                     == PackageManager.PERMISSION_GRANTED) {
@@ -304,12 +280,31 @@ public class Camera extends AppCompatActivity {
                             fusedLocationProviderClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
                                 @Override
                                 public void onSuccess(Location location) {
-                                    HashMap<String, Object> map = new HashMap();
-                                    map.put("longitud", location.getLongitude());
-                                    map.put("latitud", location.getLatitude());
-                                    db.collection("Usuarios").document(email).
-                                            collection("misImagenes").document(filename).set(map);
-                                    Log.d(TAG, "onSuccess: "+ map);
+
+                                    StorageReference storageReference = storageReferenceGlobal.child(email).child("misImagenes").child(filename);
+                                    UploadTask uploadTask = storageReference.putBytes(bytes);
+
+                                    uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                                        @Override
+                                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                                            storageReference.getDownloadUrl().addOnSuccessListener(uri -> {
+                                                HashMap<String, Object> map = new HashMap();
+                                                map.put("uri_foto", uri);
+                                                map.put("longitud", location.getLongitude());
+                                                map.put("latitud", location.getLatitude());
+                                                db.collection("Usuarios").document(email).
+                                                        collection("misImagenes").document(filename).set(map);
+                                                Toast.makeText(getApplicationContext(),"Se ha guardado la imagen con exito" + uri + " "+location.getLongitude()
+                                                + " " + location.getLatitude(),Toast.LENGTH_LONG).show();
+                                            });
+
+                                        }
+
+
+                                    }).addOnFailureListener(e -> {
+
+                                    });
                                 }
                             });
 

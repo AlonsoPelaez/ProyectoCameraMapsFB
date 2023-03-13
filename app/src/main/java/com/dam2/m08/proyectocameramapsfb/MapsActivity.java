@@ -11,15 +11,18 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -29,6 +32,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.dam2.m08.proyectocameramapsfb.databinding.ActivityMapsBinding;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -51,7 +55,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        binding = ActivityMapsBinding.inflate(getLayoutInflater());
+        binding =ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         preferences();
@@ -106,23 +110,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
         getLocationPermission();
 
-        if (locationPermissionGranted){
-            SharedPreferences prefer = getSharedPreferences(getString(R.string.prefer_file), Context.MODE_PRIVATE);
-            String email = prefer.getString("email", null);
+        SharedPreferences prefer = getSharedPreferences(getString(R.string.prefer_file), Context.MODE_PRIVATE);
+        String email = prefer.getString("email", null);
 
-            db.collection("Usuarios").document(email).collection("misImagenes").addSnapshotListener(new EventListener<QuerySnapshot>() {
+        if (locationPermissionGranted) {
+            db.collection("Usuarios").document(email).collection("misImagenes").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                 @Override
-                public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
-                    for (DocumentSnapshot document:value) {
+                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Log.d(TAG, "onSuccess: " + document.getData());
 
                         String uriStr = document.getString("uri_foto");
+
+                        LatLng ubicacion = new LatLng(document.getDouble("latitud"),document.getDouble("longitud"));
+
+                        MarkerOptions markerOptions = new MarkerOptions()
+                                .position(ubicacion)
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+//                        mMap.addMarker(markerOptions);
+
+                        //esperar a que picasso recupere la foto para pasar a cargar la siguiente foto
                         Picasso.get().load(uriStr).into(new Target() {
                             @Override
                             public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                                BitmapDescriptor bitmapDescriptorFactory = BitmapDescriptorFactory.fromBitmap(bitmap);
-                                LatLng ubicacion = new LatLng((Double) document.get("longitud"), (Double) document.get("latitud"));
-                                mMap.addMarker(new MarkerOptions().position(ubicacion).icon(bitmapDescriptorFactory));
-                                mMap.moveCamera(CameraUpdateFactory.newLatLng(ubicacion));
+                                Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, 180, 90, false);
+                                BitmapDescriptor bitmapDescriptorFactory = BitmapDescriptorFactory.fromBitmap(resizedBitmap);
+
+                                markerOptions.icon(bitmapDescriptorFactory);
+
+                                mMap.addMarker(markerOptions);
                             }
 
                             @Override
@@ -139,9 +155,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             });
         }
-
     }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
