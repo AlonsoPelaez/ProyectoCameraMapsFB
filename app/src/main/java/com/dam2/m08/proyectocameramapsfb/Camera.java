@@ -1,12 +1,19 @@
 package com.dam2.m08.proyectocameramapsfb;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.app.Activity;
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -22,14 +29,17 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.location.Location;
 import android.media.Image;
 import android.media.ImageReader;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 
+import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -37,6 +47,19 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.dialog.MaterialDialogs;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -47,23 +70,33 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 public class Camera extends AppCompatActivity {
 
-    private  static final String TAG = "AndroidCameraApi";
+    private boolean locationPermissionGranted;
+    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 101;
+    private FusedLocationProviderClient fusedLocationProviderClient;
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private static final FirebaseStorage storage = FirebaseStorage.getInstance();
+    private static final StorageReference storageReferenceGlobal = storage.getReference().child("Usuarios");
+    private static final String TAG = "AndroidCameraApi";
     private ImageView btnTomaFoto;
     private ImageView btn_cambiaCamara;
     private ImageView imageViewGaleria;
     private TextureView textureView;
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+
     static {
-        ORIENTATIONS.append(Surface.ROTATION_0,90);
-        ORIENTATIONS.append(Surface.ROTATION_90,0);
-        ORIENTATIONS.append(Surface.ROTATION_180,270);
-        ORIENTATIONS.append(Surface.ROTATION_270,180);
+        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+        ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
+
     private String cameraId;
     private String cameraFrontId;
     private String cameraBackId;
@@ -72,12 +105,10 @@ public class Camera extends AppCompatActivity {
     private CameraCaptureSession cameraCaptureSession;
     private CaptureRequest.Builder captureRequestBuilder;
     private Size imageDimension;
-    private File file;
-    private File folder;
-    private String folderName ="DirFotoCamera2";
-    private static  final int REQUEST_CAMERA_PERMISSION =200;
+
+    private static final int REQUEST_CAMERA_PERMISSION = 200;
     private Handler mBackgroundHandler;
-    private HandlerThread  mbackgroundThread;
+    private HandlerThread mbackgroundThread;
     private Bitmap resizedBitmap;
 
 
@@ -86,8 +117,10 @@ public class Camera extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.camera);
 
-        ActionBar actionBar= getSupportActionBar();
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        ActionBar actionBar = getSupportActionBar();
         actionBar.setTitle("");
+
         textureView = findViewById(R.id.textureView);
         if (textureView != null) {
             textureView.setSurfaceTextureListener(texturelistener);
@@ -99,21 +132,10 @@ public class Camera extends AppCompatActivity {
         defineCamaras();
 
         if (btnTomaFoto != null) {
-            btnTomaFoto.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    tomaFoto();
-
-                }
-            });
+            btnTomaFoto.setOnClickListener(v -> tomaFoto());
         }
-        if (btn_cambiaCamara != null){
-            btn_cambiaCamara.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    cambiaCameraId();
-                }
-            });
+        if (btn_cambiaCamara != null) {
+            btn_cambiaCamara.setOnClickListener(v -> cambiaCameraId());
         }
     }
 
@@ -128,7 +150,7 @@ public class Camera extends AppCompatActivity {
                 } else if (facing == CameraCharacteristics.LENS_FACING_BACK) {
                     cameraBackId = idCamera;
                     cameraId = idCamera;
-                    cameraIsBack=true;
+                    cameraIsBack = true;
                 }
             }
         } catch (CameraAccessException e) {
@@ -177,52 +199,55 @@ public class Camera extends AppCompatActivity {
             cameraDevice = null;
         }
     };
-    protected void startBackgroundThreads(){
+
+    protected void startBackgroundThreads() {
         mbackgroundThread = new HandlerThread("Camera Background");
         mbackgroundThread.start();
         mBackgroundHandler = new Handler(mbackgroundThread.getLooper());
     }
-    protected void stopBackgroundThread(){
+
+    protected void stopBackgroundThread() {
         mbackgroundThread.quitSafely();
         try {
             mbackgroundThread.join();
             mbackgroundThread = null;
             mBackgroundHandler = null;
-        }catch (InterruptedException e){
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
+
     private void tomaFoto() {
 
-        if (cameraDevice == null){
+        if (cameraDevice == null) {
             return;
         }
-        if (!isExtenalStorageAvailableForRW() || isExternalStorageReadOnly()){
+        if (!isExtenalStorageAvailableForRW() || isExternalStorageReadOnly()) {
             btnTomaFoto.setEnabled(false);
         }
-        if (isStoragePermissionGranted()){
+        if (isStoragePermissionGranted()) {
 
             CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
 
             try {
                 CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
                 Size[] jpegSizes = null;
-                if (characteristics != null){
+                if (characteristics != null) {
                     jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
                 }
                 int width = 640;
                 int height = 480;
-                if (jpegSizes != null && jpegSizes.length > 0){
+                if (jpegSizes != null && jpegSizes.length > 0) {
                     width = jpegSizes[0].getWidth();
                     height = jpegSizes[0].getHeight();
                 }
-                final ImageReader reader =  ImageReader.newInstance(width,height, ImageFormat.JPEG,1);
-                List<Surface> outPutSurface = new ArrayList<Surface>(2);
+                final ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
+                List<Surface> outPutSurface = new ArrayList<>(2);
                 outPutSurface.add(reader.getSurface());
                 outPutSurface.add(new Surface(textureView.getSurfaceTexture()));
 
-                final CaptureRequest.Builder captureBuilder= cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+                final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
                 captureBuilder.addTarget(reader.getSurface());
                 captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
                 //orientation
@@ -230,62 +255,72 @@ public class Camera extends AppCompatActivity {
                 int rotation = getWindowManager().getDefaultDisplay().getRotation();
                 captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, rotation);
 
-                file = null;
-                folder = new File(folderName);
-                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                String imageFileName =  "IMG:" +timeStamp+".jpg";
-                file = new File(getExternalFilesDir(folderName),"/"+ imageFileName);
-                if (!folder.exists()){
-                    folder.mkdirs();
-                }
 
-                ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
-                    @Override
-                    public void onImageAvailable(ImageReader reader) {
-                        Image image=null;
-                        try {
+                ImageReader.OnImageAvailableListener readerListener = reader1 -> {
+                    try (Image image = reader1.acquireLatestImage()) {
 
-                            image =  reader.acquireLatestImage();
-                            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                            byte[] bytes = new byte[buffer.capacity()];
-                            buffer.get(bytes);
+                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                        byte[] bytes = new byte[buffer.capacity()];
+                        buffer.get(bytes);
 
-                            Bitmap bitmapOriginal = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                            guarda(rotaImage(bitmapOriginal));
+                        SharedPreferences prefer = getSharedPreferences(getString(R.string.prefer_file), Context.MODE_PRIVATE);
+                        String email = prefer.getString("email", null);
 
+                        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+                        String filename = "IMG_" + timeStamp;
 
-                            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                            int width = 90;
-                            int height = 60;
-                            resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
+                        StorageReference storageReference = storageReferenceGlobal.child(email).child("misImagenes").child(filename);
+                        UploadTask uploadTask = storageReference.putBytes(bytes);
 
-                            updateImageView(rotaImage(resizedBitmap));
+                        uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
 
+                                storageReference.getDownloadUrl().addOnSuccessListener(uri -> {
+                                    HashMap<String, Object> map = new HashMap();
+                                    map.put("uri_foto", uri);
+                                    db.collection("Usuarios").document(email).
+                                            collection("misImagenes").document(filename).set(map);
 
+                                    Log.d(TAG, "onSuccess: "+ map);
+                                });
 
-                        }catch (FileNotFoundException e){
-                            e.printStackTrace();
-
-                        }catch (IOException e){
-                            e.printStackTrace();
-                        }finally {
-                            if (image !=null){
-                                image.close();
                             }
-                        }
-                    }
 
 
-                    private void guarda(Bitmap bitmap) throws  IOException{
-                        OutputStream outputStream = null;
-                        try {
-                            outputStream = new FileOutputStream(file);
-                            bitmap.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
-                        }finally {
-                            if (outputStream !=null){
-                                outputStream.close();
+                        }).addOnFailureListener(e -> {
+
+                        });
+
+                            if (ContextCompat.checkSelfPermission(this,
+                                    Manifest.permission.ACCESS_FINE_LOCATION)
+                                    == PackageManager.PERMISSION_GRANTED) {
+                                locationPermissionGranted = true;
+                            } else {
+                                ActivityCompat.requestPermissions(this,
+                                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                        PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
                             }
-                        }
+                            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
+                                @Override
+                                public void onSuccess(Location location) {
+                                    HashMap<String, Object> map = new HashMap();
+                                    map.put("longitud", location.getLongitude());
+                                    map.put("latitud", location.getLatitude());
+                                    db.collection("Usuarios").document(email).
+                                            collection("misImagenes").document(filename).set(map);
+                                    Log.d(TAG, "onSuccess: "+ map);
+                                }
+                            });
+
+
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                        int width1 = 90;
+                        int height1 = 60;
+                        resizedBitmap = Bitmap.createScaledBitmap(bitmap, width1, height1, false);
+
+                        updateImageView(rotaImage(resizedBitmap));
+
                     }
                 };
 
@@ -341,12 +376,7 @@ public class Camera extends AppCompatActivity {
     }
 
     public void updateImageView(Bitmap bitmap){
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                imageViewGaleria.setImageBitmap(bitmap);
-            }
-        });
+        runOnUiThread(() -> imageViewGaleria.setImageBitmap(bitmap));
     }
 
     private static boolean isExternalStorageReadOnly(){
@@ -386,7 +416,7 @@ public class Camera extends AppCompatActivity {
             Surface surface = new Surface(texture);
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(surface);
-            cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+            cameraDevice.createCaptureSession(Collections.singletonList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
 

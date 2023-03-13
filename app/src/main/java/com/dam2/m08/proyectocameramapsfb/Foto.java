@@ -1,57 +1,39 @@
 package com.dam2.m08.proyectocameramapsfb;
 
 import android.graphics.Bitmap;
+import android.widget.ImageView;
+
+import com.google.android.gms.maps.model.LatLng;
 
 public class Foto {
-    private Bitmap bitmapOriginal;
-    private Bitmap bitmapMiniatura;
-    private String ubicacion;
+    private ImageView fotoOriginal;
+    private ImageView fotoMiniatura;
+    private LatLng ubicacion;
 
-
-    public Foto(Bitmap bitmapOriginal, Bitmap bitmapMiniatura, String ubicacion) {
-        this.bitmapOriginal = bitmapOriginal;
-        this.bitmapMiniatura = bitmapMiniatura;
+    public Foto(ImageView fotoOriginal, ImageView fotoMiniatura, LatLng ubicacion) {
+        this.fotoOriginal = fotoOriginal;
+        this.fotoMiniatura = fotoMiniatura;
         this.ubicacion = ubicacion;
     }
 
-    public Foto(Bitmap bitmapOriginal, Bitmap bitmapMiniatura) {
-        this.bitmapOriginal = bitmapOriginal;
-        this.bitmapMiniatura = bitmapMiniatura;
-        this.ubicacion = "";
+    public ImageView getFotoOriginal() {
+        return fotoOriginal;
     }
 
-    public Bitmap getBitmapOriginal() {
-        return bitmapOriginal;
+    public ImageView getFotoMiniatura() {
+        return fotoMiniatura;
     }
 
-    public void setBitmapOriginal(Bitmap bitmapOriginal) {
-        this.bitmapOriginal = bitmapOriginal;
-    }
-
-    public Bitmap getBitmapMiniatura() {
-        return bitmapMiniatura;
-    }
-
-    public void setBitmapMiniatura(Bitmap bitmapMiniatura) {
-        this.bitmapMiniatura = bitmapMiniatura;
-    }
-
-    public String getUbicacion() {
+    public LatLng getUbicacion() {
         return ubicacion;
     }
-
-    public void setUbicacion(String ubicacion) {
-        this.ubicacion = ubicacion;
-    }
-
-
 
     @Override
     public String toString() {
         return "Foto{" +
-                "bitmapOriginal='" + bitmapOriginal + '\'' +
-                ", bitmapMiniatura='" + bitmapMiniatura + '\'' +
-                ", ubicacion='" + ubicacion + '\'' +
+                "fotoOriginal=" + fotoOriginal +
+                ", fotoMiniatura=" + fotoMiniatura +
+                ", ubicacion=" + ubicacion +
                 '}';
     }
 }

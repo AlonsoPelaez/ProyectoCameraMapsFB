@@ -2,4 +2,5 @@
     <string name="app_name">ProyectoCameraMapsFB</string>
     <string name="title_activity_maps">MapsActivity</string>
     <string name="prefer_file">com.dam2.m08.ProyectoCameraMapsFB.Reference_File</string>
+    <string name="iv_foto">foto</string>
 </resources>

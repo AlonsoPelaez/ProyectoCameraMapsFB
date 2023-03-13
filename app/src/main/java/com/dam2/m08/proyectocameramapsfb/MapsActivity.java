@@ -1,6 +1,7 @@
 package com.dam2.m08.proyectocameramapsfb;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -9,25 +10,32 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.location.Location;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.dam2.m08.proyectocameramapsfb.databinding.ActivityMapsBinding;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.dam2.m08.proyectocameramapsfb.databinding.ActivityMapsBinding;
-import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -36,8 +44,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ImageView buttonCamera;
     private boolean locationPermissionGranted;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 101;
-    private FusedLocationProviderClient fusedLocationProviderClient;
     private final String TAG="GOOGLE_MAPS_CAMERA";
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +53,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         preferences();
 
@@ -64,11 +71,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void getLocationPermission() {
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
                 android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -103,33 +105,41 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         getLocationPermission();
-        getLocationActual();
 
+        if (locationPermissionGranted){
+            SharedPreferences prefer = getSharedPreferences(getString(R.string.prefer_file), Context.MODE_PRIVATE);
+            String email = prefer.getString("email", null);
 
-    }
+            db.collection("Usuarios").document(email).collection("misImagenes").addSnapshotListener(new EventListener<QuerySnapshot>() {
+                @Override
+                public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
+                    for (DocumentSnapshot document:value) {
 
-    private void getLocationActual() {
+                        String uriStr = document.getString("uri_foto");
+                        Picasso.get().load(uriStr).into(new Target() {
+                            @Override
+                            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                                BitmapDescriptor bitmapDescriptorFactory = BitmapDescriptorFactory.fromBitmap(bitmap);
+                                LatLng ubicacion = new LatLng((Double) document.get("longitud"), (Double) document.get("latitud"));
+                                mMap.addMarker(new MarkerOptions().position(ubicacion).icon(bitmapDescriptorFactory));
+                                mMap.moveCamera(CameraUpdateFactory.newLatLng(ubicacion));
+                            }
 
-        if (locationPermissionGranted) {
-            Log.d(TAG, "onMapReady: location permission"+locationPermissionGranted);
-            if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                    android.Manifest.permission.ACCESS_FINE_LOCATION)
-                    == PackageManager.PERMISSION_GRANTED) {
-                locationPermissionGranted = true;
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                        PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
-            }
+                            @Override
+                            public void onBitmapFailed(Exception e, Drawable errorDrawable) {
 
-            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(location -> {
+                            }
 
-                LatLng ubicacion= new LatLng(location.getLatitude(), location.getLongitude());
-                mMap.addMarker(new MarkerOptions().position(ubicacion));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(ubicacion));
+                            @Override
+                            public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                            }
+                        });
+                    }
+                }
             });
-
         }
+
     }
 
 
