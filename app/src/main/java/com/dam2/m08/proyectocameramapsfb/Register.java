@@ -61,6 +61,8 @@ public class Register extends AppCompatActivity {
                                     }
                                 }
                             });
+                }else {
+                    showAlertError("Los campos no pueden estar vacios. Intentenlo de nuevo");
                 }
             }
         });

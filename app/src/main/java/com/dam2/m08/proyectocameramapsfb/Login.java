@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,7 +27,7 @@ public class Login extends AppCompatActivity {
     private EditText usuario;
     private EditText password;
     private Button btn_login;
-    private Button btn_register;
+    private TextView sendToRegister;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -36,7 +37,7 @@ public class Login extends AppCompatActivity {
         btn_login = findViewById(R.id.btnLogin);
         usuario = findViewById(R.id.edtxt_Usuario_Login);
         password = findViewById(R.id.edtxt_Contraseña_Login);
-        btn_register = findViewById(R.id.sendToRegister);
+        sendToRegister = findViewById(R.id.sendToRegister);
 
         session();
         initUi();
@@ -62,14 +63,16 @@ public class Login extends AppCompatActivity {
                                     }
                                 }
                             });
+                }else {
+                    showAlertError("los campos no pueden estar vacios. Intentelo de nuevo");
                 }
             }
         });
 
-        btn_register.setOnClickListener(new View.OnClickListener() {
+        sendToRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent= new Intent(Login.this, Register.class);
+                Intent intent= new Intent(getApplicationContext(), Register.class);
                 startActivity(intent);
             }
         });

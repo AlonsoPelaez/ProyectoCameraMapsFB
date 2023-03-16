@@ -3,4 +3,6 @@
     <string name="title_activity_maps">MapsActivity</string>
     <string name="prefer_file">com.dam2.m08.ProyectoCameraMapsFB.Reference_File</string>
     <string name="iv_foto">foto</string>
+    <string name="enlace_al_registro" translatable="false">¿Ya tienes una cuenta? Registrate</string>
+    <string name="titulo_registro" translatable="false">Registro</string>
 </resources>
