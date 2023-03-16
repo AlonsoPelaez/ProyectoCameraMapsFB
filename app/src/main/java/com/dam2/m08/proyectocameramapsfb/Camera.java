@@ -42,6 +42,7 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
+import android.view.MenuItem;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -52,6 +53,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.dialog.MaterialDialogs;
 import com.google.common.collect.Maps;
@@ -136,6 +138,41 @@ public class Camera extends AppCompatActivity {
         if (btn_cambiaCamara != null) {
             btn_cambiaCamara.setOnClickListener(v -> cambiaCameraId());
         }
+
+
+        BottomNavigationView bottomNavigationView = findViewById(R.id.menu_horizontal);
+        bottomNavigationView.setSelectedItemId(R.id.camera);
+
+        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                switch (item.getItemId()) {
+
+                    case R.id.maps:
+
+                        startActivity(new Intent(getApplicationContext(), MapsActivity.class));
+                        finish();
+                        overridePendingTransition(0, 0);
+                        return true;
+                    case R.id.camera:
+                        startActivity(new Intent(getApplicationContext(), Camera.class));
+                        finish();
+                        overridePendingTransition(0, 0);
+                        return true;
+                    case R.id.galeria:
+                        startActivity(new Intent(getApplicationContext(), Galeria.class));
+                        finish();
+                        overridePendingTransition(0, 0);
+                        return true;
+                    case R.id.configuracion:
+                        startActivity(new Intent(getApplicationContext(), Configuracion.class));
+                        overridePendingTransition(0, 0);
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
     }
 
     private void defineCamaras() {

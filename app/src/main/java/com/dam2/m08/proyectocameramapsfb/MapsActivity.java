@@ -1,7 +1,6 @@
 package com.dam2.m08.proyectocameramapsfb;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -11,19 +10,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.ImageView;
 
 
-import com.google.android.gms.maps.CameraUpdate;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -36,15 +29,12 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
 import java.io.IOException;
-import java.util.Objects;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -52,7 +42,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ActivityMapsBinding binding;
     private boolean locationPermissionGranted;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 101;
-    private final String TAG="GOOGLE_MAPS_CAMERA";
+    private final String TAG="GOOGLE_MAPS";
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     @Override
@@ -140,53 +130,40 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 @Override
                 public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                     for (DocumentSnapshot document : queryDocumentSnapshots) {
-                        Log.d(TAG, "onSuccess: " + document.getData());
+
 
                         String uriStr = document.getString("uri_foto");
-
                         LatLng ubicacion = new LatLng(document.getDouble("latitud"),document.getDouble("longitud"));
+                        MarkerOptions markerOptions = new MarkerOptions().position(ubicacion);
+                        mMap.addMarker(markerOptions);
 
-                       MarkerOptions markerOptions = new MarkerOptions().position(ubicacion);
-//                        markerOptions.icon(BitmapDescriptorFactory.fromBitmap(getImageIcon(uriStr)));
-
-                        Marker marker =mMap.addMarker(markerOptions);
-
-//                        esperar a que picasso recupere la foto para pasar a cargar la siguiente foto
-                        Picasso.get().load(uriStr).into(new Target() {
-                            @Override
-                            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                                Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, 180, 180, false);
-                                BitmapDescriptor bitmapDescriptorFactory = BitmapDescriptorFactory.fromBitmap(resizedBitmap);
-                                marker.setIcon(bitmapDescriptorFactory);
-                            }
-
-                            @Override
-                            public void onBitmapFailed(Exception e, Drawable errorDrawable) {
-
-                            }
-
-                            @Override
-                            public void onPrepareLoad(Drawable placeHolderDrawable) {
-
-                            }
-                        });
+//                        Picasso.get().load(uriStr).into(new Target() {
+//                            @Override
+//                            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+//                                LatLng ubicacion = new LatLng(document.getDouble("latitud"),document.getDouble("longitud"));
+//
+//
+//                                Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, false);
+//                                BitmapDescriptor bitmapDescriptorFactory = BitmapDescriptorFactory.fromBitmap(resizedBitmap);
+//                                MarkerOptions markerOptions = new MarkerOptions().position(ubicacion).icon(bitmapDescriptorFactory);
+//                                mMap.addMarker(markerOptions);
+//                            }
+//
+//                            @Override
+//                            public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+//
+//                            }
+//
+//                            @Override
+//                            public void onPrepareLoad(Drawable placeHolderDrawable) {
+//
+//                            }
+//                        });
                     }
                 }
             });
         }
     }
-//    public Bitmap getImageIcon(String uri){
-//        runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    Picasso.get().load(uri).get();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        });
-//    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

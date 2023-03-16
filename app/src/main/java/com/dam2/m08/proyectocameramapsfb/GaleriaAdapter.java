@@ -54,10 +54,13 @@ public class GaleriaAdapter extends BaseAdapter {
         }
 
         ImageView imageView = view.findViewById(R.id.gv_fotos);
+        Log.d("asda", "getView: "+imageView);
 
         String uri = mUrls.get(position);
+        Log.d("asda", "getView: "+uri);
 
         Picasso.get().load(uri).into(imageView);
+        Log.d("asda", "getView: "+view);
 
         return view;
     }
