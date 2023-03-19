@@ -20,24 +20,26 @@
             android:textSize="40sp" />
 
         <EditText
-            android:id="@+id/edtxt_Contraseña_Register"
+            android:id="@+id/edtxt_Usuario_Register"
             android:layout_width="293dp"
             android:layout_height="57dp"
             android:layout_gravity="center"
             android:layout_marginTop="100dp"
             android:ems="10"
-            android:hint="Enter a password"
-            android:inputType="textPassword" />
+            android:hint="Enter a user"
+            android:inputType="textPersonName" />
 
         <EditText
-            android:id="@+id/edtxt_Usuario_Register"
+            android:id="@+id/edtxt_Contraseña_Register"
             android:layout_width="293dp"
             android:layout_height="57dp"
             android:layout_gravity="center"
             android:layout_marginTop="30dp"
             android:ems="10"
-            android:hint="Enter a user"
-            android:inputType="textPersonName" />
+            android:hint="Enter a password"
+
+            android:inputType="textPassword" />
+             />
 
         <Button
             android:id="@+id/btn_Register"

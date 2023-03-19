@@ -131,7 +131,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         Picasso.get().load(uriStr).resize(180,140).into(new Target() {
                             @Override
                             public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                                markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bitmap));
+                                markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bitmap)).rotation(-90);
                                 mMap.addMarker(markerOptions);
                             }
 

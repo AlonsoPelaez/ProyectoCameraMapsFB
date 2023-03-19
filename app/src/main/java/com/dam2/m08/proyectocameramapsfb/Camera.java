@@ -343,6 +343,7 @@ public class Camera extends AppCompatActivity {
                                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                                         PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
                             }
+
                             fusedLocationProviderClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
                                 @Override
                                 public void onSuccess(Location location) {
