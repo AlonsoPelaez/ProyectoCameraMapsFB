@@ -58,11 +58,14 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.dialog.MaterialDialogs;
 import com.google.common.collect.Maps;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -86,7 +89,7 @@ public class Camera extends AppCompatActivity {
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private static final FirebaseStorage storage = FirebaseStorage.getInstance();
     private static final StorageReference storageReferenceGlobal = storage.getReference().child("Usuarios");
-    private static final String TAG = "AndroidCameraApi";
+    private static final String TAG = "GOOGLE_MAPS_CAMERA";
     private ImageView btnTomaFoto;
     private ImageView btn_cambiaCamara;
     private ImageView imageViewGaleria;
@@ -113,6 +116,7 @@ public class Camera extends AppCompatActivity {
     private Handler mBackgroundHandler;
     private HandlerThread mbackgroundThread;
     private Bitmap resizedBitmap;
+    List<String> uris;
 
 
     @Override
@@ -129,6 +133,21 @@ public class Camera extends AppCompatActivity {
         btnTomaFoto = findViewById(R.id.btn_takePicture);
         btn_cambiaCamara = findViewById(R.id.btn_switchCamera);
         imageViewGaleria = findViewById(R.id.ivfoto);
+        imageViewGaleria.setRotation(-90);
+
+
+        SharedPreferences prefer = getSharedPreferences(getString(R.string.prefer_file), Context.MODE_PRIVATE);
+        String email = prefer.getString("email", null);
+        uris = new ArrayList<>();
+        db.collection("Usuarios").document(email).collection("misImagenes").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                for (DocumentSnapshot document: queryDocumentSnapshots) {
+                    uris.add(document.getString("uri_foto"));
+                }
+                Picasso.get().load(uris.get(uris.size()-1)).resize(70,70).centerCrop().into(imageViewGaleria);
+            }
+        });
 
         defineCamaras();
 
@@ -137,6 +156,16 @@ public class Camera extends AppCompatActivity {
         }
         if (btn_cambiaCamara != null) {
             btn_cambiaCamara.setOnClickListener(v -> cambiaCameraId());
+        }
+        if (imageViewGaleria != null){
+            imageViewGaleria.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent= new Intent(getApplicationContext(), FotoCompleta.class);
+                    intent.putExtra("imagen",uris.get(uris.size()-1));
+                    startActivity(intent);
+                }
+            });
         }
 
 
@@ -149,7 +178,6 @@ public class Camera extends AppCompatActivity {
                 switch (item.getItemId()) {
 
                     case R.id.maps:
-
                         startActivity(new Intent(getApplicationContext(), MapsActivity.class));
                         finish();
                         overridePendingTransition(0, 0);
@@ -272,8 +300,8 @@ public class Camera extends AppCompatActivity {
                 if (characteristics != null) {
                     jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
                 }
-                int width = 640;
-                int height = 480;
+                int width = 720;
+                int height = 640;
                 if (jpegSizes != null && jpegSizes.length > 0) {
                     width = jpegSizes[0].getWidth();
                     height = jpegSizes[0].getHeight();
@@ -300,7 +328,8 @@ public class Camera extends AppCompatActivity {
                         buffer.get(bytes);
 
                         SharedPreferences prefer = getSharedPreferences(getString(R.string.prefer_file), Context.MODE_PRIVATE);
-                        String email = prefer.getString("email", null);
+                        String email = prefer.getString("email",null);
+
 
                         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
                         String filename = "IMG_" + timeStamp;
@@ -332,27 +361,13 @@ public class Camera extends AppCompatActivity {
                                                 map.put("latitud", location.getLatitude());
                                                 db.collection("Usuarios").document(email).
                                                         collection("misImagenes").document(filename).set(map);
-                                                Toast.makeText(getApplicationContext(),"Se ha guardado la imagen con exito" + uri + " "+location.getLongitude()
-                                                + " " + location.getLatitude(),Toast.LENGTH_LONG).show();
+                                                uris.add(String.valueOf(uri));
+                                                Picasso.get().load(uri).resize(70,70).centerCrop().into(imageViewGaleria);
                                             });
-
                                         }
-
-
-                                    }).addOnFailureListener(e -> {
-
                                     });
                                 }
                             });
-
-
-                        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                        int width1 = 90;
-                        int height1 = 60;
-                        resizedBitmap = Bitmap.createScaledBitmap(bitmap, width1, height1, false);
-
-                        updateImageView(rotaImage(resizedBitmap));
-
                     }
                 };
 
@@ -393,22 +408,6 @@ public class Camera extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-    }
-    public Bitmap rotaImage(Bitmap bitmap){
-
-        Matrix matrix = new Matrix();
-        if (cameraIsBack){
-            matrix.postRotate(90);
-        }else {
-            matrix.postRotate(270);
-        }
-
-        Bitmap bitmapRota= Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),matrix,false);
-        return bitmapRota;
-    }
-
-    public void updateImageView(Bitmap bitmap){
-        runOnUiThread(() -> imageViewGaleria.setImageBitmap(bitmap));
     }
 
     private static boolean isExternalStorageReadOnly(){

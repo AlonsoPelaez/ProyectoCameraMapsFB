@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/black">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,10 +17,12 @@
             android:id="@+id/gv_fotos"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="center"
             android:horizontalSpacing="10dp"
-            android:numColumns="4"
-            android:verticalSpacing="10dp" />
+            android:numColumns="3"
+            android:verticalSpacing="10dp"
+            android:columnWidth="90dp"
+            android:stretchMode="columnWidth"
+            android:layout_gravity="center"/>
 
     </LinearLayout>
     <com.google.android.material.bottomnavigation.BottomNavigationView

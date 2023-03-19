@@ -9,6 +9,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,27 +28,25 @@ import java.util.List;
 import java.util.zip.Inflater;
 
 public class Galeria extends AppCompatActivity {
-    private List<String> mUris= new ArrayList<>();
+    public List<String> mUris;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private GridView gv_fotos;
+    private GaleriaAdapter galeriaAdapter;
     private final String TAG="GOOGLE_MAPS_GALERIA";
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.galeria);
 
-        GridView gridView = findViewById(R.id.gv_fotos);
+        mUris = new ArrayList<>();
+        gv_fotos = findViewById(R.id.gv_fotos);
+        cargaUris();
 
-        GaleriaAdapter adapter = new GaleriaAdapter(getApplicationContext(),mUris);
-        Log.d(TAG, "onCreate: "+mUris.toString());
-
-        gridView.setAdapter(adapter);
-        Log.d(TAG, "onCreate: "+adapter);
-
-        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        gv_fotos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(getApplicationContext(), FotoCompleta.class);
-                intent.putExtra("imagen",position);
+                intent.putExtra("imagen",mUris.get(position));
                 startActivity(intent);
             }
         });
@@ -90,12 +89,18 @@ public class Galeria extends AppCompatActivity {
 
         SharedPreferences prefer = getSharedPreferences(getString(R.string.prefer_file), Context.MODE_PRIVATE);
         String email = prefer.getString("email", null);
+
         db.collection("Usuarios").document(email).collection("misImagenes").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
             @Override
             public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                 for (DocumentSnapshot document: queryDocumentSnapshots) {
-                    Log.d(TAG, "onSuccess: "+ document.getData());
+
                     mUris.add(document.getString("uri_foto"));
+                }
+
+                if (mUris.size() > 0) {
+                    galeriaAdapter = new GaleriaAdapter(getApplicationContext(), mUris);
+                    gv_fotos.setAdapter(galeriaAdapter);
                 }
             }
         });

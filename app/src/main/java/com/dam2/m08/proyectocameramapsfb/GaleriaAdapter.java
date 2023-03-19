@@ -1,11 +1,13 @@
 package com.dam2.m08.proyectocameramapsfb;
 
 import android.content.Context;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.GridLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -24,6 +26,7 @@ public class GaleriaAdapter extends BaseAdapter {
 
     private List<String> mUrls;
     private LayoutInflater inflater;
+    private final String TAG ="GOOGLE_MAPS_ADAPTER_GALERIA";
 
     public GaleriaAdapter(Context mContext, List<String> mUrls) {
         this.mUrls = mUrls;
@@ -47,21 +50,14 @@ public class GaleriaAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        View view = convertView;
 
-        if (view == null) {
-            view = inflater.inflate(R.layout.galeria,parent,false);
-        }
-
-        ImageView imageView = view.findViewById(R.id.gv_fotos);
-        Log.d("asda", "getView: "+imageView);
+        ImageView imageView = new ImageView(inflater.getContext());
+        imageView.setLayoutParams(new GridView.LayoutParams(340, 350));
+        imageView.setRotation(-90);
 
         String uri = mUrls.get(position);
-        Log.d("asda", "getView: "+uri);
+        Picasso.get().load(uri).resize(340,350).centerCrop().into(imageView);
 
-        Picasso.get().load(uri).into(imageView);
-        Log.d("asda", "getView: "+view);
-
-        return view;
+        return imageView;
     }
 }

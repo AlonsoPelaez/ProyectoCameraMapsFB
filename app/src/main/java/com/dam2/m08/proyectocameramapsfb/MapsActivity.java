@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 
 import com.google.android.gms.maps.GoogleMap;
@@ -34,9 +35,10 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback{
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
@@ -44,7 +46,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 101;
     private final String TAG="GOOGLE_MAPS";
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,7 +53,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         binding =ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        preferences();
+//        preferences();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -106,15 +107,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void preferences() {
-        Intent intent = getIntent();
-        String usuario = intent.getStringExtra("email");
-
-        SharedPreferences prefer = getSharedPreferences(getString(R.string.prefer_file), Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefer.edit();
-        editor.putString("email", usuario);
-        editor.apply();
-    }
 
 
     @Override
@@ -127,43 +119,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         if (locationPermissionGranted) {
             db.collection("Usuarios").document(email).collection("misImagenes").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+
                 @Override
                 public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                     for (DocumentSnapshot document : queryDocumentSnapshots) {
-
-
                         String uriStr = document.getString("uri_foto");
-                        LatLng ubicacion = new LatLng(document.getDouble("latitud"),document.getDouble("longitud"));
-                        MarkerOptions markerOptions = new MarkerOptions().position(ubicacion);
-                        mMap.addMarker(markerOptions);
+                        double latitud = document.getDouble("latitud");
+                        double longitud = document.getDouble("longitud");
 
-//                        Picasso.get().load(uriStr).into(new Target() {
-//                            @Override
-//                            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-//                                LatLng ubicacion = new LatLng(document.getDouble("latitud"),document.getDouble("longitud"));
-//
-//
-//                                Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, false);
-//                                BitmapDescriptor bitmapDescriptorFactory = BitmapDescriptorFactory.fromBitmap(resizedBitmap);
-//                                MarkerOptions markerOptions = new MarkerOptions().position(ubicacion).icon(bitmapDescriptorFactory);
-//                                mMap.addMarker(markerOptions);
-//                            }
-//
-//                            @Override
-//                            public void onBitmapFailed(Exception e, Drawable errorDrawable) {
-//
-//                            }
-//
-//                            @Override
-//                            public void onPrepareLoad(Drawable placeHolderDrawable) {
-//
-//                            }
-//                        });
+                        MarkerOptions markerOptions = new MarkerOptions().position(new LatLng(latitud,longitud));
+                        Picasso.get().load(uriStr).resize(180,140).into(new Target() {
+                            @Override
+                            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                                markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bitmap));
+                                mMap.addMarker(markerOptions);
+                            }
+
+                            @Override
+                            public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+                                Toast.makeText(getApplicationContext(),e.getMessage(),Toast.LENGTH_SHORT).show();
+                            }
+
+                            @Override
+                            public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                            }
+                        });
                     }
                 }
             });
         }
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -179,14 +166,4 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        return super.onOptionsItemSelected(item);
-
-    }
 }

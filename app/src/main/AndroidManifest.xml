@@ -53,8 +53,7 @@
         </activity>
         <activity
             android:name=".Camera"
-            android:exported="true"
-            android:parentActivityName=".MapsActivity">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -63,8 +62,16 @@
         </activity>
         <activity
             android:name=".Galeria"
-            android:exported="true"
-            android:parentActivityName=".MapsActivity">
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".FotoCompleta"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

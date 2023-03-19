@@ -54,6 +54,12 @@ public class Login extends AppCompatActivity {
                                 @Override
                                 public void onComplete(@NonNull Task<AuthResult> task) {
                                     if (task.isSuccessful()){
+
+                                        SharedPreferences prefer = getSharedPreferences(getString(R.string.prefer_file), Context.MODE_PRIVATE);
+                                        SharedPreferences.Editor editor = prefer.edit();
+                                        editor.putString("email", usuario.getText().toString());
+                                        editor.apply();
+
                                         //envia al home de la app
                                         showMaps();
                                     }
@@ -83,7 +89,10 @@ public class Login extends AppCompatActivity {
 
         if (email != null){
             Intent intent = new Intent(this, MapsActivity.class);
-            intent.putExtra("email",email);
+
+            SharedPreferences.Editor editor = prefer.edit();
+            editor.putString("email", email);
+            editor.apply();
             startActivity(intent);
         }
     }
